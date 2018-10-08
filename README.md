@@ -1,2 +1,2 @@
-# go-micoservice
-Micro web service in Go with Gorilla Mux
+# turntable- microservice
+microservice for turntable API's
