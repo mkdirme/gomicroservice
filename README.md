@@ -1,2 +1,2 @@
-# turntable- microservice
-microservice for turntable API's
+#REST web service
+microservice for REST API's
