@@ -85,18 +85,19 @@ func (store *UserMySQLStore) DeleteUser(email string) (bool, error) {
 }
 
 //IsUser check if user is a valid user
-func (store *UserMySQLStore) IsUser(email string, password string) (bool, error) {
+func (store *UserMySQLStore) IsUser(email string) bool {
 	var err error
 	defer db.Close()
 	var isUser bool
-	err = db.QueryRow("SELECT IF(COUNT(*),'true','false') FROM user WHERE Email = ? AND Password = ?", email, password).Scan(&isUser)
+	err = db.QueryRow("SELECT IF(COUNT(*),'true','false') FROM user WHERE Email = ?", email).Scan(&isUser)
+	//	err = db.QueryRow("SELECT IF(COUNT(*),'true','false') FROM user WHERE Email = ? AND Password = ?", email, password).Scan(&isUser)
 	if err != nil {
 		log.Println(err)
-		return false, errors.New(err.Error())
+		return false
 	}
 	if isUser {
-		return true, errors.New("Invalid Email")
+		return true
 	}
 
-	return false, nil
+	return false
 }

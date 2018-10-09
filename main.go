@@ -14,5 +14,5 @@ func main() {
 	router.HandleFunc("/register", handle.RegisterNewUser).Methods("POST")
 	// router.HandleFunc("/", handle.NOTIMPLENTED).Methods("GET")
 	// router.HandleFunc("/HOLD/{hold}", handle.NOTIMPLENTED).Methods("PUT")
-	http.ListenAndServe(":8081", router)
+	http.ListenAndServe(":8080", router)
 }

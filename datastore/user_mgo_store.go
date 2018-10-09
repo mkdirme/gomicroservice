@@ -16,7 +16,7 @@ type UserStore interface {
 	// DeleteUser()
 	// UpdateUser()
 	//SelectAllUsers()
-	IsUser(string, string) (bool, error)
+	IsUser(string) bool
 }
 
 //User model for  DB
@@ -32,6 +32,7 @@ type User struct {
 //UserMgoStore struct
 type UserMgoStore struct {
 	C *mgo.Collection
+	S *mgo.Session
 }
 
 //NewUserMgoStore constructor for UserMgoStore class
@@ -41,9 +42,10 @@ func NewUserMgoStore() *UserMgoStore {
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
+	//defer session.Close()
 	collection := session.DB("mgo").C("users")
 	store.C = collection
+	store.S = session
 	return store
 }
 
@@ -62,17 +64,14 @@ func (store *UserMgoStore) FindUser(email string) (*interface{}, error) {
 func (store *UserMgoStore) SaveUser(email string, password string) (bool, error) {
 
 	usr := struct {
-		email    string
-		password string
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}{
 		email,
 		password,
 	}
-	isUser, err := store.isUser(email)
-	if err != nil {
-		log.Panicln(err)
-		return false, err
-	}
+	isUser := store.IsUser(email)
+
 	if !isUser {
 		err := store.C.Insert(&usr)
 		if err != nil {
@@ -86,11 +85,8 @@ func (store *UserMgoStore) SaveUser(email string, password string) (bool, error)
 
 //DeleteUser is used to delete curent user from system
 func (store *UserMgoStore) DeleteUser(email string) (bool, error) {
-	isUser, err := store.isUser(email)
-	if err != nil {
-		log.Panicln(err)
-		return false, err
-	}
+	isUser := store.IsUser(email)
+
 	if isUser {
 		// Delete record
 		err := store.C.Remove(bson.M{"email": email})
@@ -104,34 +100,32 @@ func (store *UserMgoStore) DeleteUser(email string) (bool, error) {
 }
 
 //IsUser check if user is a valid user
-func (store *UserMgoStore) IsUser(email string, password string) (bool, error) {
-	usr := struct {
-		email    string
-		password string
-	}{
-		email,
-		password,
-	}
-	err := store.C.Find(bson.M{"email": email}).One(&usr)
-	if err != nil {
-		log.Fatal(err)
-	}
+func (store *UserMgoStore) IsUser(email string) bool {
 
-	return false, nil
-}
-
-func (store *UserMgoStore) isUser(email string) (bool, error) {
-	usr := struct {
-		email    string
-		password string
-	}{}
-
-	err := store.C.Find(bson.M{"email": email}).One(&usr)
+	count, err := store.C.Find(bson.M{"email": email}).Count()
 	if err != nil {
 		log.Println(err)
-		return false, err
-	} else if len(usr.email) <= 0 {
-		return false, errors.New("user " + email + " dose not exist")
+		return false
 	}
-	return true, nil
+	if count > 0 {
+		return true
+	}
+
+	return false
 }
+
+// func (store *UserMgoStore) isUser(email string) (bool, error) {
+// 	usr := struct {
+// 		email    string
+// 		password string
+// 	}{}
+
+// 	err := store.C.Find(bson.M{"email": email}).One(&usr)
+// 	if err != nil {
+// 		log.Println(err)
+// 		return false, err
+// 	} else if len(usr.email) <= 0 {
+// 		return false, errors.New("user " + email + " dose not exist")
+// 	}
+// 	return true, nil
+// }

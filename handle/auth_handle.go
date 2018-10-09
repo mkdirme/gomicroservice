@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"go-microservice/auth"
 	"go-microservice/datastore"
-	"log"
 	"net/http"
 )
 
@@ -25,21 +24,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	isUser, err := store.IsUser(request.Email, request.Password)
-	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		log.Println(err)
-		json.NewEncoder(w).Encode(err)
-		j, _ := json.Marshal(err)
-		w.Write(j)
-	} else if isUser == false {
-		j, _ := json.Marshal(isUser)
-		w.Write(j)
+	isUser := store.IsUser(request.Email)
+	var j []byte
+	if isUser {
+		token := auth.GenToken(request.Email)
+		response := new(OAuth)
+		response.AccessToken = token
+		j, _ = json.Marshal(response)
+	} else {
+		j, _ = json.Marshal(isUser)
 	}
-	token := auth.GenToken(request.Email)
-	response := new(OAuth)
-	response.AccessToken = token
-	j, _ := json.Marshal(response)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(j)
 }
 
